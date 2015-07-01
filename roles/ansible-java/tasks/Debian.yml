@@ -1,0 +1,25 @@
+- name: Check if Java is already installed
+  command: java -version
+  register: java_version
+  failed_when: java_version.rc not in [0, 1, 2]
+  changed_when: False
+  tags: java
+
+- name: Add JRE ppa
+  apt_repository: repo=ppa:webupd8team/java state=present
+  tags: java
+  when: java_version.rc == 2
+
+- name: Automatically select the Oracle License
+  shell: echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+  tags: java
+  when: java_version.rc == 2
+
+- name: Install JRE
+  apt: pkg=oracle-java{{ jdk_version }}-installer state=latest update-cache=yes force=no
+  tags: java
+  when: java_version.rc == 2
+
+- name: Show how debug works
+  debug: msg=java-{{ jdk_version }}-oracle
+

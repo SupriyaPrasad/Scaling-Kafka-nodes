@@ -1,0 +1,18 @@
+---
+apt_cache_timeout: 3600
+zookeeper:
+  version: "3.4.6"
+  mirror: "http://mirror.ox.ac.uk/sites/rsync.apache.org"
+  download_dir: "/tmp"
+  install_dir: "/usr/local"
+  data_dir: "/usr/local/var/run/zookeeper/data"
+  log_dir: "/var/log/zookeeper"
+  server_properties: "zoo.cfg"
+tick_time: 2000
+init_limit: 10
+client_port: 2181
+sync_limit: 5
+myid: 1
+autopurge_snapRetainCount: 3
+autopurge_purgeInterval: 1
+servers: ""

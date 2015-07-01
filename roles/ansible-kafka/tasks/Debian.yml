@@ -1,0 +1,92 @@
+- name: Update apt cache
+  apt: update_cache=yes cache_valid_time={{apt_cache_timeout}}
+  tags: bootstrap
+
+- name: create group
+  group:
+    name: kafka
+    state: present
+  tags: kafka
+
+- name: create user
+  user:
+    name: kafka
+    group: kafka
+  tags: kafka
+
+- name: Setting internal variable
+  set_fact:
+    kafka_name: kafka_{{ kafka.scala_version }}-{{ kafka.version }}
+  tags: kafka
+
+- name: Setting internal variable
+  set_fact:
+    kafka_dir: "{{ kafka.install_dir }}/{{ kafka_name }}"
+  tags: kafka
+
+- name: check if tar has been downloaded
+  command: test -f {{ kafka.download_dir }}/{{ kafka_name }}.tgz
+  register: kafka_tar_downloaded
+  failed_when: kafka_tar_downloaded.rc not in [0, 1]
+  changed_when: False
+  tags: kafka
+
+- name: Ensure Kafka tar is downloaded
+  get_url:
+    url: "{{ kafka.mirror }}/kafka/{{ kafka.version }}/{{ kafka_name }}.tgz"
+    dest: "{{ kafka.download_dir }}"
+  tags: kafka
+  when: kafka_tar_downloaded.rc == 1
+
+- name: Ensure tar is extracted
+  command: tar -zxf {{ kafka.download_dir }}/{{ kafka_name }}.tgz chdir={{ kafka.install_dir }}
+  tags: kafka
+
+# Config and start Kafka
+- name: Ensures data dir "{{ kafka.data_dir }}" exists
+  file:
+    path: "{{ kafka.data_dir }}"
+    state: directory
+    owner: kafka
+    group: kafka
+  tags: kafka
+
+- name: Copy real config
+  template:
+    src: kafka-properties.j2
+    dest: "{{ kafka_dir }}/config/{{ kafka.server_properties }}"
+  tags: kafka
+
+- name: Symlink {{ kafka.install_dir }}/kafka to this version
+  shell: ln -s {{ kafka_name }} kafka chdir={{ kafka.install_dir }} creates={{ kafka.install_dir }}/kafka
+  tags: kafka
+
+# Ensure that the zookeeper is running before kicking kafka
+- name: Lets wait to see if we have Port {{zk_client_port}} is avialable.
+  wait_for:
+    host: "{{ groups['zookeepers'][0] }}"
+    port: "{{ zk_client_port }}"
+    delay: 5
+    timeout: 15
+  tags: kafka
+
+- name: Install the Kafka service handler
+  template: 
+    src: kafka-service.j2
+    dest: "/etc/init.d/kafka"
+    mode: 0755
+  notify: start kafka
+  tags: kafka
+
+- name: Ensure the state of the kafka service is started
+  service: name=kafka state=started
+
+#- name: systemd start script
+#  template:
+#    src: kafka-systemd.j2
+#    dest: /etc/systemd/system/kafka.service
+#    owner: root
+#    group: root
+#    mode: 0644
+#  notify: start kafka
+#  tags: kafka

@@ -1,0 +1,3 @@
+jdk_version: '7'
+symlnk_to: 'java{{ jdk_version }}'
+accept_oracle_licence: true
