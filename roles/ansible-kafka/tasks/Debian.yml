@@ -90,3 +90,36 @@
 #    mode: 0644
 #  notify: start kafka
 #  tags: kafka
+
+- name: Check if Service Exists
+  stat: path=/etc/init.d/kafka
+  register: service_status
+  tags: test 
+
+- name: checking kafka is running and has a process
+  shell: ps -ef | grep kafka
+  register: result1
+  tags: test 
+
+- debug: msg="{{result1.stdout}}"
+  tags: test 
+
+- name: Kafka topic creation 
+  shell: "{{ kafka.install_dir }}/kafka/bin/kafka-topics.sh --create --zookeeper {{ groups['zookeepers'][0] }}: {{ zk_client_port }} --replication-factor 2 --partitions 2 --topic kafkaTopic"
+  register: results5
+  sudo: yes
+  tags: test 
+
+- name: Creating a topic
+  debug: msg="{{results5.stdout_lines}}"
+  tags: test 
+
+- name: Getting the list of topics
+  shell: "{{ kafka.install_dir }}/kafka/bin/kafka-topics.sh --list --zookeeper {{ groups['zookeepers'][0] }}: {{ zk_client_port }}"
+  register: results6
+  sudo: yes
+  tags: test 
+
+- name: Getting list of topics
+  debug: msg="{{results6.stdout_lines}}"
+  tags: test 

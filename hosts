@@ -1,10 +1,14 @@
 [java-nodes]
-192.168.0.166 ansible_ssh_user=sfuser
+192.168.0.167 ansible_ssh_user=sfuser
 
 [zookeepers]
-192.168.0.168 zookeeper_id=1 ansible_ssh_user=sfuser
-192.168.0.169 zookeeper_id=2 ansible_ssh_user=sfuser
+192.168.0.170 zookeeper_id=1 ansible_ssh_user=sfuser
+192.168.0.171 zookeeper_id=2 ansible_ssh_user=sfuser
 
 [kafka-nodes]
-192.168.0.172 kafka_broker_id=1 kafka_hostname=kafka-1 ansible_ssh_user=sfuser
-192.168.0.173 kafka_broker_id=2 kafka_hostname=kafka-2 ansible_ssh_user=sfuser
+192.168.0.154 kafka_broker_id=7 kafka_hostname=kafka-7 ansible_ssh_user=sfuser
+192.168.0.168 kafka_broker_id=1 kafka_hostname=kafka-1 ansible_ssh_user=sfuser
+192.168.0.175 kafka_broker_id=6 kafka_hostname=kafka-6 ansible_ssh_user=sfuser
+
+[remove-nodes]
+192.168.0.168 kafka_broker_id=1 kafka_hostname=kafka-1 ansible_ssh_user=sfuser

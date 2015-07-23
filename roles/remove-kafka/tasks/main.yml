@@ -1,0 +1,44 @@
+- name: Check if Service Exists
+  stat: path=/etc/init.d/kafka
+  register: service_status
+  tags: remove
+
+- name: checking kafka is running and has a process
+  shell: ps -ef | grep kafka
+  register: result1
+  tags: remove
+
+- debug: msg="{{result1.stdout}}"
+  tags: remove
+
+- file: path= "{{kafka.install_dir}}"
+
+- name: get line count of the number of times kafka is present in the process table.  
+  shell: ps -ef | grep -v grep | grep kafka | wc -l
+  register: service_stopped
+  ignore_errors: True
+  tags: remove
+
+- debug: var=service_stopped.stdout_lines.0 
+  tags: remove
+
+#- name: set var as the output of the ps command
+ # set_fact: var="${service_stopped.stdout_lines}"
+  #tags: remove
+- name: Ignore if kafka was not running
+  debug: msg="service is stopped"
+  when: service_stopped.stdout_lines.0 == "0"
+  tags: remove
+
+- name: Stop Service if the kafka is running
+  command: sudo /etc/init.d/kafka stop
+  when: service_stopped.stdout_lines.0 != "0"
+  ignore_errors: True
+  tags: remove
+
+
+
+#- name: Ensure the state of the kafka service is stopped
+#  command: sudo /etc/init.d/kafka stop
+#  when: main.exists == true
+#  tags: remove

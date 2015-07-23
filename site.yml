@@ -18,3 +18,8 @@
     - {
         role: ansible-kafka
       }
+- hosts: remove-nodes
+  roles:
+    - {
+        role: remove-kafka
+      }

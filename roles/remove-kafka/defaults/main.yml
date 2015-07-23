@@ -1,0 +1,16 @@
+apt_cache_timeout: 3600
+kafka:
+  version: "0.8.2.1"
+  scala_version: "2.10"
+  mirror: "http://mirrors.koehn.com/apache"
+  download_dir: "/tmp"
+  install_dir: "/usr/local"
+  data_dir: "/usr/local/var/run/kafka/data"
+  server_properties: "real-server.properties"
+
+# This does not have to be every Zookeeper host, but the more the better
+# by default, we assume this is run at the same time as Zookeeper provisioning
+zk_hosts: "{{ groups['zookeepers'] }}" # This does not have to be every Zookeeper host
+zk_client_port: 2181
+installed_java_version: "java-7-oracle"
+

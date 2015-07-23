@@ -92,6 +92,29 @@
 - name: Get service on port {{ client_port }}
   shell: netstat -tunlp | grep ":{{ client_port }} "
   register: results
+  tags: test1
 
 - name: See what netstat returned
-  debug: var=results.stdout
+  debug: var=results.stdout_lines
+  tags: test1
+
+- name: checking Zookeeper on {{ client_port }}
+  shell: netstat -ntlp | grep {{ client_port }}
+  register: results
+  sudo: yes
+  tags: test1
+
+- name: netstat op
+  debug: var=results
+  tags: test1
+
+- name: checking Zookeeper is running and has a process
+  shell: ps -ef | grep zookeeper
+  register: results1
+  sudo: yes
+  tags: test1
+
+- name: fuser op
+  debug: var=results1.stdout_lines
+  tags: test1
+

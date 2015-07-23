@@ -22,4 +22,5 @@
 
 - name: Show how debug works
   debug: msg=java-{{ jdk_version }}-oracle
+  tags: java
 
