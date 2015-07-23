@@ -150,6 +150,7 @@ for i in range(0,1000):
         time.sleep(1)
 
 ```
+Save this python script in the /usr/local/kafka/bin directory. Run the script using python <<filename>>.py
 **Consumer**: using the default shell script to start the consumer for that particular topic.
 ```
 bin/kafka-console-consumer.sh --zookeeper 192.168.0.170:2181 --topic new
