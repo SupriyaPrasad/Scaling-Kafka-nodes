@@ -1,36 +1,25 @@
-# Kafka Multi Node Cluster using Ansible.
-This work is inspired from https://github.com/lloydmeta/ansible-kafka-cluster. You can configure provisioned ubuntu VMs with Zookeeper(s) and Kafka node(s) in few seconds and get the Kafka multinode cluster up and running for you.
+## SCALING UP AND DOWN OF KAFKA NODES USING ANSIBLE:
 
-## How to use
-In this version, its assumed that you have provisioned VMs either on cloud or you local infrastructure before you choose to run ansible playbook.
+This playbook is for adding / removing kafka broker nodes from an existing zookeeper-kafka cluster. The initial kafka multinode cluster can be built using https://github.com/sanjeevmaheve/ansible-kafka-cluster. 
 
-### Pre-requisite
-1. Install Ansible on the development machine/VM. There are number of ways, I followed using Python package. ```$ sudo pip install ansible```
-2. ```$ git clone https://github.com/sanjeevmaheve/ansible-kafka-cluster.git```
+## How to use: 
+In this version, its assumed that you have provisioned VMs with Ubuntu OS either on cloud or you local infrastructure before you choose to run ansible playbook.
+The kafka version we are currently using is **0.8.2.1**
 
-### Running the playbook
-Ensure you have the following information correctly placed with in ansible configuration and host files.
+## Pre- requisite:
+Clone the scale up-scale down playbook using https://github.com/SupriyaPrasad/Scaling-Kafka-nodes.git
 
+## Running the playbook:
+
+Ensure the `remove-kafka` role under the roles directory.
+
+Ensure the `site.yml` file to look like :
 ```
-skm@ubuntu-node14:~/project/ansible/ansible-kafka-cluster$ cat hosts 
-[zookeepers]
-192.168.0.168 zookeeper_id=1 ansible_ssh_user=<username>
-192.168.0.169 zookeeper_id=2 ansible_ssh_user=<username>
-
-[kafka-nodes]
-192.168.0.172 kafka_broker_id=1 kafka_hostname=kafka-1 ansible_ssh_user=<username>
-192.168.0.173 kafka_broker_id=2 kafka_hostname=kafka-2 ansible_ssh_user=<username>
-```
-
-Replace username above with the user name on the destination machines where the modules would be installed and configured by ansible. Next, change the main YAML file (incase needed); it looks like this:
-
-```
-skm@ubuntu-node14:~/project/ansible/ansible-kafka-cluster$ cat site.yml 
 ---
 - hosts: zookeepers
   roles:
     - {
-        role: ansible-java, 
+        role: ansible-java,
         when: accept_oracle_licence
       }
     - {
@@ -40,219 +29,136 @@ skm@ubuntu-node14:~/project/ansible/ansible-kafka-cluster$ cat site.yml
 - hosts: kafka-nodes
   roles:
     - {
-        role: ansible-java, 
+        role: ansible-java,
         when: accept_oracle_licence
       }
     - {
         role: ansible-kafka
       }
+- hosts: remove-nodes
+  roles:
+    - {
+        role: remove-kafka
+      }
 
 ```
-Please note that the hosts defined in site.yml comes from hosts file above. Next, lets run the main playbook (assuming you made the above mentioned changes.)
+Ensure the inventory file looks like :
+
 ```
-skm@ubuntu-node14:~/project/ansible/ansible-kafka-cluster$ ansible-playbook -i hosts site.yml --sudo -K
+[zookeepers]
+192.168.0.170 zookeeper_id=1 ansible_ssh_user=<username>
+192.168.0.171 zookeeper_id=2 ansible_ssh_user=<username>
+
+[kafka-nodes]
+192.168.0.168 kafka_broker_id=1 kafka_hostname=kafka-1 ansible_ssh_user=<username>
+192.168.0.175 kafka_broker_id=2 kafka_hostname=kafka-2 ansible_ssh_user=<username>
+
+[remove-nodes]
+192.168.0.168 kafka_broker_id=1 kafka_hostname=kafka-1 ansible_ssh_user=<username>
 ```
-OR run the playbook based on the defined tags.
+Replace username above with the user name on the destination machines where the modules would be installed and configured by ansible. 
 
-#### Configure "Zookeeper" cluster (first-step)
-```
-skm@ubuntu-node14:~/project/ansible/ansible-kafka-cluster$ ansible-playbook -i hosts site.yml --tags "zookeeper" --sudo -K
-SUDO password: 
-
-PLAY [zookeepers] ************************************************************* 
-
-GATHERING FACTS *************************************************************** 
-ok: [192.168.0.169]
-ok: [192.168.0.168]
-
-TASK: [ansible-zookeeper | create group] ************************************** 
-ok: [192.168.0.169]
-ok: [192.168.0.168]
-
-TASK: [ansible-zookeeper | create user] *************************************** 
-ok: [192.168.0.169]
-ok: [192.168.0.168]
-
-TASK: [ansible-zookeeper | Setting internal variable] ************************* 
-ok: [192.168.0.168]
-ok: [192.168.0.169]
-
-TASK: [ansible-zookeeper | Setting internal variable] ************************* 
-ok: [192.168.0.168]
-ok: [192.168.0.169]
-
-TASK: [ansible-zookeeper | Download Zookeeper {{ zookeeper.version }}] ******** 
-ok: [192.168.0.169]
-ok: [192.168.0.168]
-
-TASK: [ansible-zookeeper | Unpack the tar] ************************************ 
-ok: [192.168.0.169]
-changed: [192.168.0.168]
-
-TASK: [ansible-zookeeper | Overwrite default config file] ********************* 
-ok: [192.168.0.169]
-changed: [192.168.0.168]
-
-TASK: [ansible-zookeeper | Change mode of configuration file] ***************** 
-changed: [192.168.0.169]
-changed: [192.168.0.168]
-
-TASK: [ansible-zookeeper | Copy zookeeper to real destination] **************** 
-changed: [192.168.0.169]
-changed: [192.168.0.168]
-
-TASK: [ansible-zookeeper | Check for zookeeper data dir and create if not present] *** 
-ok: [192.168.0.169]
-ok: [192.168.0.168]
-
-TASK: [ansible-zookeeper | shell mkdir -p {{ zookeeper.data_dir }}] *********** 
-changed: [192.168.0.169]
-changed: [192.168.0.168]
-
-TASK: [ansible-zookeeper | Overwrite myid file.] ****************************** 
-changed: [192.168.0.169]
-changed: [192.168.0.168]
-
-TASK: [ansible-zookeeper | Link {{ zookeeper.install_dir }}/zookeeper to this version] *** 
-changed: [192.168.0.169]
-changed: [192.168.0.168]
-
-TASK: [ansible-zookeeper | Install the zookeeper service handler] ************* 
-changed: [192.168.0.168]
-changed: [192.168.0.169]
-
-TASK: [ansible-zookeeper | Ensure the state of the zookeeper service is started] *** 
-changed: [192.168.0.169]
-changed: [192.168.0.168]
-
-NOTIFIED: [ansible-zookeeper | start zookeeper] ******************************* 
-changed: [192.168.0.169]
-changed: [192.168.0.168]
-
-PLAY RECAP ******************************************************************** 
-192.168.0.168              : ok=17   changed=10   unreachable=0    failed=0   
-192.168.0.169              : ok=17   changed=8    unreachable=0    failed=0   
-
-skm@ubuntu-node14:~/project/ansible/ansible-kafka-cluster$
-```
-
-#### Configure "Kafka" node(s)
-```
-skm@ubuntu-node:~/project/ansible/ansible-kafka-cluster$ ansible-playbook -i hosts site.yml --tags "kafka" --sudo -K
-SUDO password: 
-
-PLAY [kafka-nodes] ************************************************************ 
-
-GATHERING FACTS *************************************************************** 
-ok: [192.168.0.173]
-ok: [192.168.0.172]
-
-TASK: [ansible-kafka | create group] ****************************************** 
-ok: [192.168.0.172]
-ok: [192.168.0.173]
-
-TASK: [ansible-kafka | create user] ******************************************* 
-ok: [192.168.0.173]
-ok: [192.168.0.172]
-
-TASK: [ansible-kafka | Setting internal variable] ***************************** 
-ok: [192.168.0.172]
-ok: [192.168.0.173]
-
-TASK: [ansible-kafka | Setting internal variable] ***************************** 
-ok: [192.168.0.172]
-ok: [192.168.0.173]
-
-TASK: [ansible-kafka | check if tar has been downloaded] ********************** 
-ok: [192.168.0.173]
-ok: [192.168.0.172]
-
-TASK: [ansible-kafka | Ensure Kafka tar is downloaded] ************************ 
-skipping: [192.168.0.172]
-skipping: [192.168.0.173]
-
-TASK: [ansible-kafka | Ensure tar is extracted] ******************************* 
-changed: [192.168.0.173]
-changed: [192.168.0.172]
-
-TASK: [ansible-kafka | Ensures data dir "{{ kafka.data_dir }}" exists] ******** 
-changed: [192.168.0.172]
-changed: [192.168.0.173]
-
-TASK: [ansible-kafka | Copy real config] ************************************** 
-changed: [192.168.0.173]
-changed: [192.168.0.172]
-
-TASK: [ansible-kafka | Symlink {{ kafka.install_dir }}/kafka to this version] *** 
-changed: [192.168.0.173]
-changed: [192.168.0.172]
-
-TASK: [ansible-kafka | Lets wait to see if we have Port {{zk_client_port}} is avialable.] *** 
-ok: [192.168.0.173]
-ok: [192.168.0.172]
-
-TASK: [ansible-kafka | Install the Kafka service handler] ********************* 
-changed: [192.168.0.173]
-changed: [192.168.0.172]
-
-NOTIFIED: [ansible-kafka | start kafka] *************************************** 
-changed: [192.168.0.173]
-changed: [192.168.0.172]
-
-PLAY RECAP ******************************************************************** 
-192.168.0.172              : ok=13   changed=6    unreachable=0    failed=0   
-192.168.0.173              : ok=13   changed=6    unreachable=0    failed=0   
-
-skm@ubuntu-node14:~/project/ansible/ansible-kafka-cluster$
-```
-## Testing multi-node Kafka setup.
-
-On set of VM’s that would be used as kafka-cluster, ```'/etc/hosts'``` file should list hostnames of all kafka-nodes; something like this
+Also edit the ` '/etc/hosts' ` file to make sure it contains the respective information of the nodes to be added.
 ```
 127.0.0.1       localhost
-127.0.1.1       ubuntu-node17
-# List all the kafka nodes here so that each node in cluster know about every other nodes.
-192.168.0.172   ubuntu-node17 kafka-1
-192.168.0.173   ubuntu-node18 kafka-2
-```
-Similarly do for ubuntu-node18. As per example above, the ```/etc/hostname``` file on 192.168.0.172 and 192.168.0.173 nodes need to contain:
-```
-ubuntu-node17
-ubuntu-node18
-```
-entry respectively.
+127.0.0.1       sfuser-virtual-machine
 
-Under kafka role in ansible playbook, I enabled the ```host.name```  property i.e. hostname the broker will bind to. If not set, the server will bind to all interfaces
-```
-host.name={{ kafka_hostname }}
+# The following lines are desirable for IPv6 capable hosts
+192.168.0.168 sfuser-virtual-machine kafka-1
+192.168.0.175 sfuser-virtual-machine kafka-2
+192.168.0.154 sfuser-virtual-machine kafka-3
 ```
 
-Then create the topic using the following command:
+## Scaling up of broker nodes.
+Make sure you add the respective broker information which should be added under the [kafka-nodes] section. 
 ```
-skm@ubuntu-node17:/usr/local/kafka$ bin/kafka-topics.sh --create --zookeeper 192.168.0.168:2181 --replication-factor 2 --partitions 2 --topic test-2
-Created topic “test-2”.
+[kafka-nodes]
+192.168.0.154 kafka_broker_id=3 kafka_hostname=kafka-3 ansible_ssh_user=<username>
+192.168.0.168 kafka_broker_id=1 kafka_hostname=kafka-1 ansible_ssh_user=<username>
+192.168.0.175 kafka_broker_id=2 kafka_hostname=kafka-2 ansible_ssh_user=<username>
+```
+**Since ansible is idempotent, it will install kafka and bring up the service only on the nodes which does not have kafka on it.**
+
+To add broker nodes, we run the following command:
+``` 
+ansible-playbook -i hosts site.yml --tags "java,kafka" --sudo -K 
 ```
 
-Ensure it is created as expected:
+Once you run the above command, the ansible playbook starts running on the nodes which dont have kafka installed on them and bring them up. 
+
+we can verify that the service is up and running using the command ` netstat -tulnp ` which will give the following output
 ```
-skm@ubuntu-node17:/usr/local/kafka$ bin/kafka-topics.sh --describe --zookeeper 192.168.0.168:2181 --topic test-2
-Topic:test-2      PartitionCount:2  ReplicationFactor:2     Configs:
-      Topic: test-2     Partition: 0      Leader: 2   Replicas: 2,1     Isr: 2,1
-      Topic: test-2     Partition: 1      Leader: 1   Replicas: 1,2     Isr: 1,2
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+.
+.
+tcp6       0      0 192.168.0.175:9092      :::*                    LISTEN      -               
+.
+.
+```
+the port 9092 shows that kafka is up and running. 
+
+## Scaling Down Kafka nodes: 
+Enter the IP and the other required information of the node/nodes which have to be removed from the cluster. 
+```
+[remove-nodes]
+192.168.0.168 kafka_broker_id=1 kafka_hostname=kafka-1 ansible_ssh_user=<username>
+```
+Run the following command to remove the node from the cluster:
+```
+ansible-playbook -i hosts site.yml --tags "remove" --sudo -K
+```
+After running this, you will see that the 9092 port does not show up when we run `netstat -tulnp` .
+
+## Tests to verify no data loss between producer and consumer during scale up and scale down
+
+Consider that we have created a topic by name "new" with a replication-factor as 2 and partition as 2. the description of the topic look something like this:
+```
+sfuser@sfuser-virtual-machine:/usr/local/kafka$ bin/kafka-topics.sh --describe --zookeeper 192.168.0.170:2181 --topic new
+Topic:new	PartitionCount:2	ReplicationFactor:2	Configs:
+	Topic: new	Partition: 0	Leader: 6	Replicas: 1,6	Isr: 6,1
+	Topic: new	Partition: 1	Leader: 6	Replicas: 6,1	Isr: 6,1
+```
+As we see that the leader for p0 and p1 is 6 and the ISR i.e the in-sync replica(follower leader) is 6,1 which means that when the leader goes down, kafka picks up the next in-sync replica which is 1. 
+
+**Producer**: I have created a python API as shown below which produces sequence numbers for that particular topic. I have included all the broker nodes so that kafka will pick up another node when we bring down a node.
+```
+# -*- coding: utf-8 -*-
+from kafka import SimpleProducer, KafkaClient
+from datetime import datetime
+import pytz
+from pytz import timezone
+#import datetime
+import time
+import socket
+
+# To send messages synchronously
+kafka = KafkaClient('192.168.0.168:9092, 192.168.0.169:9092,192.168.0.172:9092, 192.168.0.173:9092, 192.168.0.175:9092, 192.168.0.154:9092')
+BATCH_SEND_DEFAULT_INTERVAL = 5
+BATCH_SEND_MSG_COUNT = 10
+
+producer = SimpleProducer(kafka, async=True,
+                          batch_send_every_n=BATCH_SEND_DEFAULT_INTERVAL,
+                          batch_send_every_t=BATCH_SEND_MSG_COUNT)
+fmt = "%y-%m%d %H:%M%S"
+producer = SimpleProducer(kafka, async=True)
+for i in range(0,1000):
+        ts = time.time()
+# Note that the application is responsible for encoding messages to type bytes
+        now_utc=datetime.now(timezone('Asia/Kolkata'))
+        producer.send_messages(b'new', bytes(now_utc) + "-->" + bytes(i))
+        print now_utc.strftime(fmt), "-->", i
+        time.sleep(1)
+
+```
+**Consumer**: using the default shell script to start the consumer for that particular topic.
+```
+bin/kafka-console-consumer.sh --zookeeper 192.168.0.170:2181 --topic new
 ```
 
-Then test this using the following commad on ubuntu-node17 and ubuntu-node18 respectively (I.e. Producer on one node and Consumer on another)
-```
-skm@ubuntu-node17:/usr/local/kafka$ bin/kafka-console-producer.sh --broker-list kafka-1:9092,kafka-2:9092 --sync --topic test-2
-skm@ubuntu-node18:/usr/local/kafka$ bin/kafka-console-consumer.sh --zookeeper 192.168.0.168:2181 --from-beginning --topic test-2
-```
+**Findings:**
 
-Now kill ```ubuntu-node18``` and you can see the leaders for the defined topic has been changed accordingly.
-```
-skm@ubuntu-node17:/usr/local/kafka$ bin/kafka-topics.sh --describe --zookeeper 192.168.0.168:2181 --topic test-2
-Topic:test-2      PartitionCount:2  ReplicationFactor:2     Configs:
-      Topic: test-2     Partition: 0      Leader: 1   Replicas: 2,1     Isr: 1
-      Topic: test-2     Partition: 1      Leader: 1   Replicas: 1,2     Isr: 1
-```
-
-Hope it helps.
+1. Start the producer and consumer on different nodes and bring down the leader of a particular partition. 
+      In this case, the producer will run seemlessly. However the consumer will throw some warnings until kafka picks up           another leader from the ISR. once it picks up the leader, the consumer will start picking up messages from where it          stopped without experiencing any loss of data.
+      Note: the consumer does not receive messages in the order. Therefore to make sure no message has been lost, i took the       numbers and sorted it. On doing so i found that no message was lost.
+2. Start the producer and consumer on differnt nodes and bring down a non-leader of a particular partition.
+      In this case, the producer and the consumer will work seemlessly.
